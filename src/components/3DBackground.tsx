@@ -8,12 +8,12 @@ function Bubble({ position, size, speed }: { position: [number, number, number];
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (meshRef.current) {
       meshRef.current.position.y += speed * 0.01;
       meshRef.current.rotation.x += 0.01;
       meshRef.current.rotation.y += 0.01;
-      
+
       // Reset position when bubble goes too high
       if (meshRef.current.position.y > 10) {
         meshRef.current.position.y = -10;
@@ -45,11 +45,11 @@ function FloatingOrb({ position, size }: { position: [number, number, number]; s
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  useFrame((state) => {
+  useFrame(({ clock }) => {
     if (meshRef.current) {
       meshRef.current.rotation.x += 0.005;
       meshRef.current.rotation.y += 0.008;
-      meshRef.current.position.y += Math.sin(state.clock.elapsedTime * 0.5) * 0.002;
+      meshRef.current.position.y += Math.sin(clock.elapsedTime * 0.5) * 0.002;
     }
   });
 
@@ -77,11 +77,11 @@ function FloatingCube({ position, size }: { position: [number, number, number]; 
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  useFrame((state) => {
+  useFrame(({ clock }) => {
     if (meshRef.current) {
       meshRef.current.rotation.x += 0.01;
       meshRef.current.rotation.z += 0.01;
-      meshRef.current.position.x += Math.sin(state.clock.elapsedTime * 0.3) * 0.001;
+      meshRef.current.position.x += Math.sin(clock.elapsedTime * 0.3) * 0.001;
     }
   });
 
@@ -107,15 +107,16 @@ function FloatingCube({ position, size }: { position: [number, number, number]; 
 
 function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null);
-  const positions = new Float32Array(1000 * 3);
 
+  // Generate positions once
+  const positions = new Float32Array(1000 * 3);
   for (let i = 0; i < 1000; i++) {
     positions[i * 3] = (Math.random() - 0.5) * 20;
     positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
     positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
   }
 
-  useFrame((state) => {
+  useFrame(() => {
     if (particlesRef.current) {
       particlesRef.current.rotation.y += 0.001;
       particlesRef.current.rotation.x += 0.0005;
@@ -127,9 +128,8 @@ function FloatingParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={1000}
-          array={positions}
-          itemSize={3}
+          args={[positions, 3]} // ✅ FIX: use args instead of array + itemSize
+          count={positions.length / 3}
         />
       </bufferGeometry>
       <pointsMaterial
@@ -146,7 +146,7 @@ function FloatingParticles() {
 function EnergyBeams() {
   const beamsRef = useRef<THREE.Group>(null);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (beamsRef.current) {
       beamsRef.current.rotation.y += 0.005;
       beamsRef.current.rotation.z += 0.003;
@@ -172,7 +172,7 @@ function EnergyBeams() {
 function WaveEffect() {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (meshRef.current) {
       meshRef.current.rotation.x += 0.002;
       meshRef.current.rotation.y += 0.001;
@@ -230,44 +230,31 @@ export default function ThreeDBackground() {
         <pointLight position={[10, 10, 10]} intensity={1.2} />
         <pointLight position={[-10, -10, -10]} intensity={0.8} color="#a78bfa" />
         <pointLight position={[0, 0, 5]} intensity={1} color="#7c3aed" />
-        
+
         {/* Floating Bubbles */}
         {bubbles.map((bubble, index) => (
-          <Bubble
-            key={index}
-            position={bubble.position}
-            size={bubble.size}
-            speed={bubble.speed}
-          />
+          <Bubble key={index} {...bubble} />
         ))}
-        
+
         {/* Floating Orbs */}
         {orbs.map((orb, index) => (
-          <FloatingOrb
-            key={`orb-${index}`}
-            position={orb.position}
-            size={orb.size}
-          />
+          <FloatingOrb key={`orb-${index}`} {...orb} />
         ))}
-        
+
         {/* Floating Cubes */}
         {cubes.map((cube, index) => (
-          <FloatingCube
-            key={`cube-${index}`}
-            position={cube.position}
-            size={cube.size}
-          />
+          <FloatingCube key={`cube-${index}`} {...cube} />
         ))}
-        
+
         {/* Floating Particles */}
         <FloatingParticles />
-        
+
         {/* Energy Beams */}
         <EnergyBeams />
-        
+
         {/* Wave Effect */}
         <WaveEffect />
       </Canvas>
     </div>
   );
-} 
+}
